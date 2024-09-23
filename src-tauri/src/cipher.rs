@@ -127,8 +127,12 @@ fn substitute(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
         return Err("Key must be all lowercase".to_string());
     }
 
-    if key.len() != 16 || plaintext.len() != 16 {
-        return Err("Key and plaintext must be 16 characters long".to_string());
+    if key.len() != 16 {
+        return Err("Key must be 16 characters long".to_string());
+    }
+
+    if plaintext.len() != 16 {
+        return Err("Plaintext must be 16 bytes long".to_string());
     }
 
     let mut ciphertext = Vec::new();
@@ -143,7 +147,17 @@ fn substitute(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
 }
 
 fn unsubstitute(ciphertext: &[u8], key: &str) -> Result<Vec<u8>, String> {
-    // ... (same input validation as substitute function)
+    if !key.chars().all(|c| c.is_lowercase()) {
+        return Err("Key must be all lowercase".to_string());
+    }
+
+    if key.len() != 16 {
+        return Err("Key must be 16 characters long".to_string());
+    }
+
+    if ciphertext.len() != 16 {
+        return Err("Plaintext must be 16 bytes long".to_string());
+    }
 
     let mut plaintext = Vec::new();
     for (c, k) in ciphertext.iter().zip(key.chars()) {
@@ -186,18 +200,25 @@ fn encrypt(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
         .map(|chunk| chunk.to_vec())
         .collect();
 
+    // We flip the chunks around the middle
     let halfpoint = chunks.len() / 2;
     let mut flipped: Vec<Vec<u8>> = Vec::new();
     flipped.extend_from_slice(&chunks[halfpoint..]);
     flipped.extend_from_slice(&chunks[..halfpoint]);
 
+    // We transpose the chunks using the key
     let transposed = transpose(&flipped.concat(), key)?;
-    let mut ciphertext: Vec<u8> = Vec::new();
 
+    // For each chunk:
+    // 1. For each character in the key:
+    //   1.1 Substitute
+    //   1.2 Shift
+    // 3. XOR result with key
+    let mut ciphertext: Vec<u8> = Vec::new();
     for chunk in transposed.chunks(16) {
         let mut chunk = chunk.to_vec();
         for keychar in key.chars() {
-            let substituted = substitute(&chunk, &keychar.to_string())?;
+            let substituted = substitute(&chunk, key)?;
             let shift_by = (keychar as u8 - b'a') as usize;
             chunk = shift(&substituted, shift_by);
         }
@@ -212,6 +233,54 @@ fn encrypt(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     }
 
     Ok(ciphertext)
+}
+
+fn decrypt(ciphertext: &[u8], key: &str) -> Result<Vec<u8>, String> {
+    if !key.chars().all(|c| c.is_lowercase()) {
+        return Err("Key must be all lowercase".to_string());
+    }
+
+    // Split the ciphertext into 16-character chunks
+    let chunks: Vec<Vec<u8>> = ciphertext.chunks(16)
+        .map(|chunk| chunk.to_vec())
+        .collect();
+
+    // For each chunk:
+    // 1. For each character in the key:
+    //   1.1 XOR with key
+    //   1.2 Unshift
+    //   1.3 Unsubstitute
+    let mut plaintext: Vec<u8> = Vec::new();
+    for chunk in chunks {
+        let mut chunk = chunk;
+
+        chunk = chunk.into_iter()
+            .zip(key.chars())
+            .map(|(b, k)| b ^ (k as u8))
+            .collect();
+
+        for keychar in key.chars().rev() {
+            let shift_by = (keychar as u8 - b'a') as usize;
+            chunk = unshift(&chunk, shift_by);
+            chunk = unsubstitute(&chunk, key)?;
+        }
+
+        plaintext.extend_from_slice(&chunk);
+    }
+
+    // We transpose the chunks using the key
+    let transposed: Vec<Vec<u8>> = untranspose(&plaintext, key)?
+        .chunks(16)
+        .map(|chunk| chunk.to_vec())
+        .collect();
+
+    // We flip the chunks around the middle
+    let halfpoint = transposed.len() - (transposed.len() / 2);
+    let mut flipped: Vec<Vec<u8>> = Vec::new();
+    flipped.extend_from_slice(&transposed[halfpoint..]);
+    flipped.extend_from_slice(&transposed[..halfpoint]);
+
+    Ok(unpad(&flipped.concat()))
 }
 
 #[cfg(test)]
@@ -279,5 +348,22 @@ mod tests {
 
             assert_eq!(plaintext, unshifted, "Failed with len: {}, amt: {}", len, amt);
         }
+    }
+
+    #[test]
+    fn test_cipher_symmety() {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+
+        let plaintext = b"According to all known laws of aviation, there is no way a bee should be able to fly.
+        Its wings are too small to get its fat little body off the ground.
+        The bee, of course, flies anyway because bees don't care what humans think is impossible.
+        Yellow, black. Yellow, black. Yellow, black. Yellow, black.";
+        let key: String = (0..16)
+            .map(|_| rng.sample(rand::distributions::Uniform::new(b'a', b'z' + 1)) as char)
+            .collect();
+        let ciphertext = encrypt(plaintext, &key).unwrap();
+        let decrypted = decrypt(&ciphertext, &key).unwrap();
+        assert_eq!(plaintext.to_vec(), decrypted)
     }
 }
