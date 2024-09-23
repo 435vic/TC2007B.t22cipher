@@ -127,7 +127,7 @@ fn substitute(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
         return Err("Key must be all lowercase".to_string());
     }
 
-    if key.len() != 16 || plaintext.len != 16 {
+    if key.len() != 16 || plaintext.len() != 16 {
         return Err("Key and plaintext must be 16 characters long".to_string());
     }
 
@@ -156,6 +156,25 @@ fn unsubstitute(ciphertext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     Ok(plaintext)
 }
 
+pub fn shift(plaintext: &[u8], amt: usize) -> Vec<u8> {
+    plaintext.iter()
+        .cycle()
+        .skip(amt)
+        .take(plaintext.len())
+        .cloned()
+        .collect()
+}
+
+pub fn unshift(ciphertext: &[u8], amt: usize) -> Vec<u8> {
+    let len = ciphertext.len();
+    ciphertext.iter()
+        .cycle()
+        .skip(len - (amt % len))
+        .take(len)
+        .cloned()
+        .collect()
+}
+
 fn encrypt(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     if !key.chars().all(|c| c.is_lowercase()) {
         return Err("Key must be all lowercase".to_string());
@@ -173,14 +192,26 @@ fn encrypt(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     flipped.extend_from_slice(&chunks[..halfpoint]);
 
     let transposed = transpose(&flipped.concat(), key)?;
+    let mut ciphertext: Vec<u8> = Vec::new();
 
     for chunk in transposed.chunks(16) {
+        let mut chunk = chunk.to_vec();
         for keychar in key.chars() {
-
+            let substituted = substitute(&chunk, &keychar.to_string())?;
+            let shift_by = (keychar as u8 - b'a') as usize;
+            chunk = shift(&substituted, shift_by);
         }
+
+        // final XOR
+        chunk = chunk.into_iter()
+            .zip(key.chars())
+            .map(|(b, k)| b ^ (k as u8))
+            .collect();
+
+        ciphertext.extend_from_slice(&chunk);
     }
 
-    Err("Not implemented".to_string())
+    Ok(ciphertext)
 }
 
 #[cfg(test)]
@@ -205,5 +236,48 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_shift() {
+        assert_eq!(shift(b"abcdef", 0), b"abcdef");
+        assert_eq!(shift(b"abcdef", 1), b"bcdefa");
+        assert_eq!(shift(b"abcdef", 2), b"cdefab");
+        assert_eq!(shift(b"abcdef", 6), b"abcdef");
+        assert_eq!(shift(b"abcdef", 7), b"bcdefa");
+    }
 
+    #[test]
+    fn test_unshift() {
+        assert_eq!(unshift(b"abcdef", 0), b"abcdef");
+        assert_eq!(unshift(b"bcdefa", 1), b"abcdef");
+        assert_eq!(unshift(b"cdefab", 2), b"abcdef");
+        assert_eq!(unshift(b"abcdef", 6), b"abcdef");
+        assert_eq!(unshift(b"bcdefa", 7), b"abcdef");
+    }
+
+    #[test]
+    fn test_shift_unshift_inverse() {
+        let plaintext = b"Hello, World! This is a test.";
+        for amt in 0..50 {
+            let shifted = shift(plaintext, amt);
+            let unshifted = unshift(&shifted, amt);
+            assert_eq!(plaintext, &unshifted[..], "Failed at shift amount: {}", amt);
+        }
+    }
+
+    #[test]
+    fn test_shift_unshift_random() {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+
+        for _ in 0..100 {
+            let len = rng.gen_range(1..100);
+            let plaintext: Vec<u8> = (0..len).map(|_| rng.gen()).collect();
+            let amt = rng.gen_range(0..200);
+
+            let shifted = shift(&plaintext, amt);
+            let unshifted = unshift(&shifted, amt);
+
+            assert_eq!(plaintext, unshifted, "Failed with len: {}, amt: {}", len, amt);
+        }
+    }
 }
