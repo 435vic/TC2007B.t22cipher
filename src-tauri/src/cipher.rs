@@ -122,7 +122,7 @@ pub fn untranspose(ciphertext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     Ok(plaintext)
 }
 
-fn substitute(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
+pub fn substitute(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     if !key.chars().all(|c| c.is_lowercase()) {
         return Err("Key must be all lowercase".to_string());
     }
@@ -146,7 +146,7 @@ fn substitute(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     Ok(ciphertext)
 }
 
-fn unsubstitute(ciphertext: &[u8], key: &str) -> Result<Vec<u8>, String> {
+pub fn unsubstitute(ciphertext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     if !key.chars().all(|c| c.is_lowercase()) {
         return Err("Key must be all lowercase".to_string());
     }
@@ -189,7 +189,7 @@ pub fn unshift(ciphertext: &[u8], amt: usize) -> Vec<u8> {
         .collect()
 }
 
-fn encrypt(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
+pub fn encrypt(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     if !key.chars().all(|c| c.is_lowercase()) {
         return Err("Key must be all lowercase".to_string());
     }
@@ -235,10 +235,12 @@ fn encrypt(plaintext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     Ok(ciphertext)
 }
 
-fn decrypt(ciphertext: &[u8], key: &str) -> Result<Vec<u8>, String> {
+pub fn decrypt(ciphertext: &[u8], key: &str) -> Result<Vec<u8>, String> {
     if !key.chars().all(|c| c.is_lowercase()) {
         return Err("Key must be all lowercase".to_string());
     }
+
+    println!("Ciphertext: {:?}", ciphertext);
 
     // Split the ciphertext into 16-character chunks
     let chunks: Vec<Vec<u8>> = ciphertext.chunks(16)

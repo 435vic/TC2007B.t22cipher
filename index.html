@@ -10,36 +10,29 @@
 
   <body>
     <div class="container">
-      <h1>Welcome to Tauri!</h1>
+      <h1>T22 Cipher</h1>
 
-      <div class="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/src/assets/vite.svg" class="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img
-            src="/src/assets/tauri.svg"
-            class="logo tauri"
-            alt="Tauri logo"
-          />
-        </a>
-        <a href="https://www.typescriptlang.org/docs" target="_blank">
-          <img
-            src="/src/assets/typescript.svg"
-            class="logo typescript"
-            alt="typescript logo"
-          />
-        </a>
+      <div id="input-area">
+        <textarea class="plaintext-input" id="input">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</textarea>
+        <!-- <div class="row-formats">
+            <button data-format="b64" class="input-format format selected">Base64</button>
+            <button data-format="utf8" class="input-format format">UTF-8</button>
+            <button data-format="hex" class="input-format format">Hexadecimal</button>
+            <button data-format="bin" class="input-format format">Binary</button>
+        </div> -->
+
+        <div class="submission-row">
+            <input id="encryption-key" placeholder="Encryption key"/>
+            <button id="encrypt-btn">Encrypt</button>
+            <button id="decrypt-btn">Decrypt</button>
+        </div>
       </div>
 
-      <p>Click on the Tauri logo to learn more about the framework</p>
+      <div id="output-area">
+        <textarea class="cyphertext" disabled id="output"></textarea>
+      </div>
 
-      <form class="row" id="greet-form">
-        <input id="greet-input" placeholder="Enter a name..." />
-        <button type="submit">Greet</button>
-      </form>
-
-      <p id="greet-msg"></p>
+      <p id="error-msg"></p>
     </div>
   </body>
 </html>
