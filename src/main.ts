@@ -40,6 +40,7 @@ let keyInput: HTMLInputElement = document.querySelector("#encryption-key")!;
 let errorArea: HTMLDivElement = document.querySelector("#error-msg")!;
 let encryptButton = document.querySelector("#encrypt-btn")!;
 let decryptButton = document.querySelector("#decrypt-btn")!;
+let randomKeyButton = document.querySelector("#random-key")!;
 
 encryptButton.addEventListener("click", async () => {
     let input = inputArea.value;
@@ -60,6 +61,12 @@ encryptButton.addEventListener("click", async () => {
         errorArea.innerHTML = e as string;
     }
     // outputArea.value = output;
+});
+
+randomKeyButton.addEventListener("click", async () => {
+    // Random 16 character all lowercase key
+    // no numeric characters
+    keyInput.value = Array.from({length: 16}, () => String.fromCharCode(Math.floor(Math.random() * 26) + 97)).join('')
 });
 
 decryptButton.addEventListener("click", async () => {

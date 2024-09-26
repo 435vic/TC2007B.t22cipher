@@ -51,6 +51,15 @@
     background-color: #232495;
 }
 
+#random-key {
+    width: 1rem;
+    height: 2.5rem;
+    padding-left: 0.8rem;
+    padding-right: 1.5rem;
+    margin-left: 0;
+    text-align: center;
+}
+
 #error-msg {
   color: #ff0000;
   font-weight: 500;
