@@ -21,18 +21,18 @@ import { invoke } from "@tauri-apps/api/tauri";
 //   });
 // });
 
-let inputFormatButtons = document.querySelectorAll(".input-format");
-let inputFormat = "b64";
+// let inputFormatButtons = document.querySelectorAll(".input-format");
+// let inputFormat = "b64";
 
-for (let btn of inputFormatButtons) {
-    btn.addEventListener("click", () => {
-        inputFormat = btn.getAttribute("data-format") || "b64";
-        inputFormatButtons.forEach((btn) => {
-            btn.classList.remove("selected");
-        });
-        btn.classList.add("selected");
-    });
-}
+// for (let btn of inputFormatButtons) {
+//     btn.addEventListener("click", () => {
+//         inputFormat = btn.getAttribute("data-format") || "b64";
+//         inputFormatButtons.forEach((btn) => {
+//             btn.classList.remove("selected");
+//         });
+//         btn.classList.add("selected");
+//     });
+// }
 
 let inputArea: HTMLTextAreaElement = document.querySelector("#input")!;
 let outputArea: HTMLTextAreaElement = document.querySelector("#output")!;
